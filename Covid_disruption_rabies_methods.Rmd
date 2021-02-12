@@ -187,7 +187,8 @@ $\mu$ is the instantaneous per capita death rate of dogs not attributable to rab
 ```{r}
 df_2019 <- df_2019 %>% 
   mutate(Age = Years*365.25 + Months*30.4375)
-MU <- 1/t.test(df_2019$Age)$estimate[[1]] #Mean: 1099.203 [1063.346, 1135.060] 
+#MU <- 1/t.test(df_2019$Age)$estimate[[1]] #Mean: 1099.203 [1063.346, 1135.060]
+MU <- 1/1099.203
 ```
 
 *$\alpha$	(rabies death rate)*
@@ -195,8 +196,8 @@ $\alpha$ is the instantaneous per capita death rate of rabid dogs and can be cal
 
 ```{r}
 df$Infectious <- df$Death_date - df$Symptoms_date
-ALPHA <- 1/t.test(df$Infectious)$estimate[[1]] #2.534247 [1.931721, 3.136772]
-#Infectious dates reasonable, faily good data, matches with Katie Hampson's findings
+#ALPHA <- 1/t.test(df$Infectious)$estimate[[1]] #2.534247 [1.931721, 3.136772]
+ALPHA <- 1/2.534247
 ```
 
 *$\nu_1$ (vaccination coverage)*
