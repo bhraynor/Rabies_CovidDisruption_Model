@@ -4,10 +4,10 @@ This repository contains code used to parameterize and construct a deterministic
 
 This repo contains:
 
-Covid_disruption_rabies_methods.Rmd: An R markdown file containing code, comments and explanation of project
-Covid_disruption_rabies_methods.html: a polished html print out of the R markdown file
-Covid_disruption_rabies_methods.pdf: a polished html print out of the R markdown file
-VSEI_ModelFramework.png: An image file pulled into the RMD print out
+1. Covid_disruption_rabies_methods.Rmd: An R markdown file containing code, comments and explanation of project
+2. Covid_disruption_rabies_methods.html: a polished html print out of the R markdown file
+3. Covid_disruption_rabies_methods.pdf: a polished html print out of the R markdown file
+4. VSEI_ModelFramework.png: An image file pulled into the RMD print out
 
 NOT INCLUDED: Date used to parameterize models is not included due to containing protected information.
 
