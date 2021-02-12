@@ -9,6 +9,6 @@ This repo contains:
 3. Covid_disruption_rabies_methods.pdf: a polished html print out of the R markdown file
 4. VSEI_ModelFramework.png: An image file pulled into the RMD print out
 
-NOT INCLUDED: Date used to parameterize models is not included due to containing protected information.
+NOT INCLUDED: Data files used to parameterize models is not included due to containing protected, personal information.
 
 Any questions on code, please contact me (Brinkley Raynor) at bhraynor@vet.upenn.edu
