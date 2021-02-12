@@ -1,5 +1,5 @@
 # Rabies_CovidDisruption_Model
-"The impact of the COVID-19 pandemic on rabies reemergence in Latin America: the case of Arequipa, Peru" publicly available code
+"The impact of the COVID-19 pandemic on rabies reemergence in Latin America: the case of Arequipa, Peru" publicly available code  
 This repository contains code used to parameterize and construct a deterministic SEIV model to investigate how COVID-19-associated disruptions have affected rabies dynamics in Arequipa, Peru. 
 
 This repo contains:
