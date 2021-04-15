@@ -2,12 +2,12 @@
 title: "Modelling canine rabies dynamics in Arequipa, Peru"
 author: "Brinkley Raynor"
 output:
+  pdf_document:
+    toc: no
   html_document:
     depth: 3
     highlight: tango
     theme: paper
-    toc: no
-  pdf_document:
     toc: no
 ---
 ```{r set-options, echo=FALSE, cache=FALSE}
@@ -436,6 +436,139 @@ RESULTS7$diffH[is.na(RESULTS7$diffH)] <- 0
 RESULTS7$Date <- seq(as.Date("2020/03/16"), as.Date("2021/03/16"), "days") #create day ref
 ```
 
+Next we can run simulations for 5 years to assess the relative impact of these disruptions. We will assume that the "normal" vaccination converage for Arequipa is 58% and that the normal survival time of rabid dogs (after symptom onset) is 2.5 days. 
+```{r}
+##############################################################################################
+#Scenario 0: No disruption (counterfactual)
+##############################################################################################
+#Set up time series params
+times <- seq(0, 365*5+1, by = 1) #time series for model (5yrs)
+params["a"] <- 1/2.5
+signal <- data.frame(times = times, vax = rep(0, length(times)))
+signal$vax[197]  <- -log(1-0.58) #2020-09-28  ---> 58% coverage
+signal$vax[562]  <- -log(1-0.58) #2021-09-28  ---> 58% coverage
+signal$vax[927]  <- -log(1-0.58) #2022-09-28  ---> 58% coverage
+signal$vax[1292] <- -log(1-0.58) #2023-09-28  ---> 58% coverage
+signal$vax[1658] <- -log(1-0.58) #2024-09-28  ---> 58% coverage
+input <- approxfun(signal)
+
+#Run model
+out <- as.data.frame(ode(y = init, times = times, func = disease_dynamics, parms = params)) #Fun model
+RESULTS.A<-data.frame(out$S, out$E, out$I, out$R, out$H) #format results
+RESULTS.A <- RESULTS.A %>%
+  mutate(diffH = out.H - lag(out.H))
+RESULTS.A$diffH[is.na(RESULTS.A$diffH)] <- 0 
+RESULTS.A$Date<-seq(as.Date("2020/03/16"), as.Date("2025/03/16"), "days") #create day ref
+
+##############################################################################################
+#Scenario 3: 3 yr disruption(ST=3.7d, vax coverage = 12.3%)
+##############################################################################################
+#Part 1: disruption time period (1 yr)
+times <- seq(0, 365*3, by = 1) #time series for model (3yr)
+params["a"] <- 1/3.7 #Survival time increased
+signal <- data.frame(times = times, vax = rep(0, length(times)))
+signal$vax[197] <- -log(1-0.123) #2020-09-28  ---> 12.3% coverage
+signal$vax[562] <- -log(1-0.123) #2021-09-28  ---> 12.3% coverage
+signal$vax[927] <- -log(1-0.123) #2022-09-28  ---> 12.3% coverage
+input <- approxfun(signal)
+out <- as.data.frame(ode(y = init, times = times, func = disease_dynamics, parms = params)) #Fun model
+RESULTS.B<-data.frame(out$S, out$E, out$I, out$R, out$H) #format results
+RESULTS.B <- RESULTS.B %>%
+  mutate(diffH = out.H - lag(out.H))
+RESULTS.B$diffH[is.na(RESULTS.B$diffH)] <- 0 
+RESULTS.B$Date <- seq(as.Date("2020/03/16"), as.Date("2023/03/16"), "days") #create day ref
+
+#Part 2: Normal control activities resume
+init3 <- NULL # popn initial values
+init3["S"] <- RESULTS.B$out.S[RESULTS.B$Date == "2023-03-15"]
+init3["E"] <- RESULTS.B$out.E[RESULTS.B$Date == "2023-03-15"]
+init3["I"] <- RESULTS.B$out.I[RESULTS.B$Date == "2023-03-15"]
+init3["R"] <- RESULTS.B$out.R[RESULTS.B$Date == "2023-03-15"]
+init3["H"] <- RESULTS.B$out.H[RESULTS.B$Date == "2023-03-15"]
+
+times <- seq(0, 365*2+1, by = 1) #time series for model (5-3yr)
+params["a"] <- 1/2.5 #Survival time increased
+signal <- data.frame(times = times, vax = rep(0, length(times)))
+signal$vax[197] <- -log(1-0.58) #2023-09-28  ---> 58% coverage
+signal$vax[563] <- -log(1-0.58) #2024-09-28  ---> 58% coverage
+input <- approxfun(signal)
+out <- as.data.frame(ode(y = init3, times = times, func = disease_dynamics, parms = params)) #Fun model
+RESULTS.B2<-data.frame(out$S, out$E, out$I, out$R, out$H) #format results
+RESULTS.B2 <- RESULTS.B2 %>%
+  mutate(diffH = out.H - lag(out.H))
+RESULTS.B2$diffH[is.na(RESULTS.B2$diffH)] <- 0 
+RESULTS.B2$Date <- seq(as.Date("2023/03/15"), as.Date("2025/03/15"), "days") #create day ref
+
+RESULTS.B1 <- RESULTS.B %>%
+  filter(Date < as.Date("2023-03-15"))
+
+RESULTS.B <- rbind(RESULTS.B1, RESULTS.B2)
+
+##############################################################################################
+#Scenario 2: 2 yr disruption(ST=3.7d, vax coverage = 12.3%)
+##############################################################################################
+
+#Part 2: Normal control activities resume
+init2 <- NULL # popn initial values
+init2["S"] <- RESULTS.B$out.S[RESULTS.B$Date == "2022-03-15"]
+init2["E"] <- RESULTS.B$out.E[RESULTS.B$Date == "2022-03-15"]
+init2["I"] <- RESULTS.B$out.I[RESULTS.B$Date == "2022-03-15"]
+init2["R"] <- RESULTS.B$out.R[RESULTS.B$Date == "2022-03-15"]
+init2["H"] <- RESULTS.B$out.H[RESULTS.B$Date == "2022-03-15"]
+
+times <- seq(0, 365*3+1, by = 1) #time series for model 
+params["a"] <- 1/2.5 #Survival time increased
+signal <- data.frame(times = times, vax = rep(0, length(times)))
+signal$vax[197] <- -log(1-0.58) #2022-09-28  ---> 58% coverage
+signal$vax[562] <- -log(1-0.58) #2023-09-28  ---> 58% coverage
+signal$vax[928] <- -log(1-0.58) #2024-09-28  ---> 58% coverage
+
+input <- approxfun(signal)
+out <- as.data.frame(ode(y = init2, times = times, func = disease_dynamics, parms = params)) #Fun model
+RESULTS.C2<-data.frame(out$S, out$E, out$I, out$R, out$H) #format results
+RESULTS.C2 <- RESULTS.C2 %>%
+  mutate(diffH = out.H - lag(out.H))
+RESULTS.C2$diffH[is.na(RESULTS.C2$diffH)] <- 0 
+RESULTS.C2$Date <- seq(as.Date("2022/03/15"), as.Date("2025/03/15"), "days") #create day ref
+
+RESULTS.C1 <- RESULTS.B %>%
+  filter(Date < as.Date("2022-03-15"))
+
+RESULTS.C <- rbind(RESULTS.C1, RESULTS.C2)
+##############################################################################################
+#Scenario 1: 1 yr disruption(ST=3.7d, vax coverage = 12.3%)
+##############################################################################################
+
+#Part 2: Normal control activities resume
+init1 <- NULL # popn initial values
+init1["S"] <- RESULTS.B$out.S[RESULTS.B$Date == "2021-03-15"]
+init1["E"] <- RESULTS.B$out.E[RESULTS.B$Date == "2021-03-15"]
+init1["I"] <- RESULTS.B$out.I[RESULTS.B$Date == "2021-03-15"]
+init1["R"] <- RESULTS.B$out.R[RESULTS.B$Date == "2021-03-15"]
+init1["H"] <- RESULTS.B$out.H[RESULTS.B$Date == "2021-03-15"]
+
+times <- seq(0, 365*4+1, by = 1) #time series for model 
+params["a"] <- 1/2.5 #Survival time increased
+signal <- data.frame(times = times, vax = rep(0, length(times)))
+signal$vax[197]  <- -log(1-0.58) #2021-09-28  ---> 58% coverage
+signal$vax[562]  <- -log(1-0.58) #2022-09-28  ---> 58% coverage
+signal$vax[927]  <- -log(1-0.58) #2023-09-28  ---> 58% coverage
+signal$vax[1293] <- -log(1-0.58) #2024-09-28  ---> 58% coverage
+input <- approxfun(signal)
+
+out <- as.data.frame(ode(y = init1, times = times, func = disease_dynamics, parms = params)) #Fun model
+RESULTS.D2<-data.frame(out$S, out$E, out$I, out$R, out$H) #format results
+RESULTS.D2 <- RESULTS.D2 %>%
+  mutate(diffH = out.H - lag(out.H))
+RESULTS.D2$diffH[is.na(RESULTS.D2$diffH)] <- 0 
+RESULTS.D2$Date <- seq(as.Date("2021/03/15"), as.Date("2025/03/15"), "days") #create day ref
+
+RESULTS.D1 <- RESULTS.B %>%
+  filter(Date < as.Date("2021-03-15"))
+
+RESULTS.D <- rbind(RESULTS.D1, RESULTS.D2)
+```
+
 
 ## Results
 
@@ -497,7 +630,7 @@ fig4 <- ggplot()+
      paste0(trans, "k")
      })+
 #  ggtitle("Deterministic model") + #title label
-  scale_color_manual(values = Pal1, name= "Diease state", breaks=c("Susceptible","Exposed","Infectious","Vaccinated")) +
+  scale_color_manual(values = Pal1, name= "Disease state", breaks=c("Susceptible","Exposed","Infectious","Vaccinated")) +
     scale_x_date(date_breaks= "1 year", date_labels="%Y", limits=c(as.Date("2014-06-01", "%Y-%m-%d"), as.Date("2020-07-01", "%Y-%m-%d")))+
   theme(text = element_text(size=20),
         axis.text.x = element_text(size=16))+
@@ -511,7 +644,7 @@ fig4b <- ggplot()+
   geom_line(data=RESULTS, aes(x=date, y=out.I, color="Infectious"), size=1.5, alpha=0.8)+
   #geom_line(data=RESULTS, aes(x=date, y=out.R, color="Vaccinated"), size =1.5, alpha=0.8)+
 #  ggtitle("Deterministic model") + #title label
-  scale_color_manual(values = Pal1, name= "Diease state", breaks=c("Susceptible","Exposed","Infectious","Vaccinated")) +
+  scale_color_manual(values = Pal1, name= "Disease state", breaks=c("Susceptible","Exposed","Infectious","Vaccinated")) +
     scale_x_date(date_breaks= "1 year", date_labels="%Y", limits=c(as.Date("2014-06-01", "%Y-%m-%d"), as.Date("2020-07-01", "%Y-%m-%d")))+
   theme(text = element_text(size=20),
         axis.text.x = element_text(size=16))+
@@ -557,7 +690,7 @@ COVID_plots <- function(RESULTS, title) {
     geom_line(data=RESULTS, aes(x=Date, y=out.I, color="Infectious"), size=1.5, alpha=0.8)+
     ggtitle(title) + #title label
     theme(axis.text.x = element_text(angle = 45, hjust=1))+
-    scale_color_manual(values = Pal1, name= "Diease state") +
+    scale_color_manual(values = Pal1, name= "Disease state") +
     labs(y= "Number of dogs", x = "Time (days)") #axis labels
 }
 
@@ -575,6 +708,36 @@ ggpubr::ggarrange(C1, C4, C2, C5, C3, C6, nrow = 3, ncol=2)
 <br />**Figure 6: Simulated rabies cases for different COVID scenarios**
 
 
+To look at the intermediate term effects of COVID 19, we ran 5 year simulations for different scenarios:  
+1. **Counterfactual- no disruptions**, maintained 2.5 day average survival time of rabid dogs and achieved yearly vaccination coverage of 58%  
+2. **1 year disruption: From March 2020-March 2021**, survival time of rabid dogs increased to 3.7d and yearly vaccination campaign reached coverage of 12.3%, before returning to pre-pandemic normal (2.5 day average survival time of rabid dogs and achieved yearly vaccination coverage of 58%)  
+3. **2 year disruption: From March 2020-March 2022**, survival time of rabid dogs increased to 3.7d and yearly vaccination campaign reached coverage of 12.3%, before returning to pre-pandemic normal (2.5 day average survival time of rabid dogs and achieved yearly vaccination coverage of 58%)  
+4. **3 year disruption: From March 2020-March 2023**, survival time of rabid dogs increased to 3.7d and yearly vaccination campaign reached coverage of 12.3%, before returning to pre-pandemic normal (2.5 day average survival time of rabid dogs and achieved yearly vaccination coverage of 58%)  
+
+
+```{r, fig.width=9,fig.height=4}
+Pal2 <- c('1 year disruption' = 'gold',
+          '2 year disruption' = 'orange1',
+          '3 year disruption' = 'red3',
+          'No disruption' = 'dodgerblue3')
+fig6 <- ggplot()+
+    theme_classic()+ #white background w/ out grid
+    geom_line(data=RESULTS.A, aes(x=Date, y=out.I, color="No disruption"), size=1.5, alpha=0.8)+
+    geom_line(data=RESULTS.D, aes(x=Date, y=out.I, color="1 year disruption"), size=1.5, alpha=0.8)+
+    geom_line(data=RESULTS.C, aes(x=Date, y=out.I, color="2 year disruption"), size=1.5, alpha=0.8)+
+    geom_line(data=RESULTS.B, aes(x=Date, y=out.I, color="3 year disruption"), size=1.5, alpha=0.8)+
+    ggtitle("5 year simulation") + #title label
+    scale_color_manual(values = Pal2, name= "Disruption scenario") +
+    scale_y_continuous(name="Number of rabid dogs",
+                       sec.axis = sec_axis(trans=~.*100/params["N"], name="Prevalence (%)"))+
+    theme(axis.text.x = element_text(angle = 45, hjust=1, size=16),
+          text = element_text(size=20),
+          axis.title.y.right = element_text(vjust=2))+
+    labs(x = "Time (days)") #axis labels
+
+fig6
+```
+
 ## References
 
 Castillo-Neyra, R., Toledo, A. M., Arevalo-Nieto, C., MacDonald, H., Puente-León, M. D. la, Naquira-Velarde, C., Paz-Soldan, V. A., Buttenheim, A. M., & Levy, M. Z. (2019). Socio-spatial heterogeneity in participation in mass dog rabies vaccination campaigns, Arequipa, Peru. PLOS Neglected Tropical Diseases, 13(8), e0007600. https://doi.org/10.1371/journal.pntd.0007600
@@ -590,3 +753,6 @@ King, A. (2017). Exact simulation of birth-death processes via the Gillespie alg
 Red Arequipa Caylloma. (2019). Plan de accion de la campaña de vacunacion antirabica canina 2019. https://redperifericaaqp.gob.pe/wp-content/uploads/2019/04/accion-de-la-campana-atirabica-2019-comprimido.pdf
 
 World Health Organization. (2013). WHO Expert Consultation on Rabies: Second report. World Health Organization. https://apps.who.int/iris/handle/10665/85346
+
+
+
